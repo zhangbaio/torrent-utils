@@ -1,0 +1,29 @@
+torrentUtils:
+  name: torrent-util
+  version: 1.0.0
+
+
+server:
+  port: 9090
+
+spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 20MB
+      max-request-size: 100MB
+      location: ${java.io.tmpdir}
+
+app:
+  # 文件夹
+  uploadDir: uploads/
+  uploadTorrentDir: uploads/torrent/
+  uploadZipDir: uploads/zip/
+  # 原始种子文件
+  originalFileDir: 压缩种子文件/
+  # 磁力链接汇总
+  allFileDir: 磁力链接汇总/
+  # 种子分类
+  classifyFileDir: 种子分类/
+
+
