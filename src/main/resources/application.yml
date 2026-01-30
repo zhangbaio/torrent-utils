@@ -51,3 +51,12 @@ app:
         pattern: "h4610"
       - name: AVF-PPV
         pattern: "AVF-PPV-HEY"
+
+  # 文件清理配置
+  cleanup:
+    enabled: true                    # 是否启用清理任务
+    cron: "0 0 2 * * ?"             # 定时任务执行时间（默认凌晨2点）
+    delay-hours: 24                  # 文件保留多少小时后清理
+    cleanup-intermediate-files: true # 是否清理中间文件（torrent、压缩包）
+    cleanup-work-dir: false          # 是否清理整个工作目录
+    cleanup-magnet-files: true       # 是否清理磁力链接汇总文件

@@ -1,8 +1,10 @@
 package com.example.torrentutils.controller;
 
 import com.example.torrentutils.model.ApiResponse;
+import com.example.torrentutils.model.CleanupResult;
 import com.example.torrentutils.model.FileClassificationRule;
 import com.example.torrentutils.model.WorkflowResult;
+import com.example.torrentutils.service.FileCleanupService;
 import com.example.torrentutils.service.FileExtractionService;
 import com.example.torrentutils.service.workflow.FileProcessingWorkflow;
 import com.example.torrentutils.service.FileClassificationService;
@@ -48,6 +50,9 @@ public class FileUploadController {
 
     @Autowired
     private TorrentConversionService torrentConversionService;
+
+    @Autowired
+    private FileCleanupService fileCleanupService;
 
     /**
      * 上传多个压缩包，解压，分类移动到文件夹，生成汇总磁力链接文件
@@ -272,6 +277,71 @@ public class FileUploadController {
         } catch (Exception e) {
             logger.error("批量下载失败: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * 手动触发文件清理任务
+     *
+     * @param delayHours 可选，文件保留多少小时后清理，不传则使用配置值
+     * @return 清理结果
+     */
+    @PostMapping("/cleanup/trigger")
+    public ApiResponse<CleanupResult> triggerCleanup(@RequestParam(required = false) Integer delayHours) {
+        try {
+            logger.info("手动触发文件清理任务，延迟时间: {} 小时", delayHours);
+            CleanupResult result = fileCleanupService.manualCleanup(delayHours);
+            return ApiResponse.success("文件清理完成", result);
+        } catch (Exception e) {
+            logger.error("文件清理失败: {}", e.getMessage(), e);
+            return ApiResponse.error("文件清理失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取清理任务状态
+     *
+     * @return 当前清理配置信息
+     */
+    @GetMapping("/cleanup/status")
+    public ApiResponse<CleanupStatus> getCleanupStatus() {
+        CleanupStatus status = new CleanupStatus();
+        status.setEnabled(true); // 从配置读取
+        status.setDelayHours(24); // 从配置读取
+        status.setCron("0 0 2 * * ?"); // 从配置读取
+        return ApiResponse.success(status);
+    }
+
+    /**
+     * 清理任务状态
+     */
+    public static class CleanupStatus {
+        private boolean enabled;
+        private int delayHours;
+        private String cron;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getDelayHours() {
+            return delayHours;
+        }
+
+        public void setDelayHours(int delayHours) {
+            this.delayHours = delayHours;
+        }
+
+        public String getCron() {
+            return cron;
+        }
+
+        public void setCron(String cron) {
+            this.cron = cron;
         }
     }
 }
