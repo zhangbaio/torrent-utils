@@ -10,10 +10,17 @@ import com.example.torrentutils.service.TorrentConversionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -192,5 +199,79 @@ public class FileUploadController {
     public ApiResponse<String> addClassificationRule(@RequestBody FileClassificationRule rule) {
         fileProcessingWorkflow.addClassificationRule(rule);
         return ApiResponse.success("分类规则添加成功", rule.getCategoryName());
+    }
+
+    /**
+     * 下载磁力链接文件
+     *
+     * @param filePath 文件路径
+     * @return 文件资源
+     */
+    @GetMapping("/download")
+    public ResponseEntity<Resource> downloadFile(@RequestParam("filePath") String filePath) {
+        try {
+            Path path = Paths.get(filePath);
+            if (!Files.exists(path) || !Files.isRegularFile(path)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = new FileSystemResource(path);
+            String filename = path.getFileName().toString();
+
+            // URL编码文件名以支持中文 (RFC 5987 格式)
+            String encodedFilename = URLEncoder.encode(filename, "UTF-8")
+                    .replaceAll("\\+", "%20");
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + encodedFilename)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .contentLength(Files.size(path))
+                    .body(resource);
+
+        } catch (Exception e) {
+            logger.error("下载文件失败: {} - {}", filePath, e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * 批量下载多个磁力链接文件（打包为zip）
+     *
+     * @param filePaths 文件路径列表
+     * @return zip文件
+     */
+    @PostMapping("/download/batch")
+    public ResponseEntity<Resource> downloadBatch(@RequestBody List<String> filePaths) {
+        try {
+            // 创建临时zip文件
+            String tempZipPath = System.getProperty("java.io.tmpdir") + "/magnets_" + UUID.randomUUID() + ".zip";
+            Path zipPath = Paths.get(tempZipPath);
+
+            try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(Files.newOutputStream(zipPath))) {
+                for (String filePath : filePaths) {
+                    Path file = Paths.get(filePath);
+                    if (Files.exists(file) && Files.isRegularFile(file)) {
+                        java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(file.getFileName().toString());
+                        zos.putNextEntry(entry);
+                        Files.copy(file, zos);
+                        zos.closeEntry();
+                    }
+                }
+            }
+
+            Resource resource = new FileSystemResource(zipPath);
+            String filename = "磁力链接汇总.zip";
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .contentLength(Files.size(zipPath))
+                    .body(resource);
+
+        } catch (Exception e) {
+            logger.error("批量下载失败: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

@@ -33,22 +33,22 @@ public class WorkflowResult {
     private String status;
 
     public static class CategoryInfo {
-        private String name;
+        private String categoryName;
         private int fileCount;
         private String magnetFile;
 
-        public CategoryInfo(String name, int fileCount, String magnetFile) {
-            this.name = name;
+        public CategoryInfo(String categoryName, int fileCount, String magnetFile) {
+            this.categoryName = categoryName;
             this.fileCount = fileCount;
             this.magnetFile = magnetFile;
         }
 
-        public String getName() {
-            return name;
+        public String getCategoryName() {
+            return categoryName;
         }
 
-        public void setName(String name) {
-            this.name = name;
+        public void setCategoryName(String categoryName) {
+            this.categoryName = categoryName;
         }
 
         public int getFileCount() {
