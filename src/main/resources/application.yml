@@ -15,7 +15,7 @@ spring:
       location: ${java.io.tmpdir}
 
 app:
-  # 文件夹
+  # 文件夹配置
   uploadDir: uploads/
   uploadTorrentDir: uploads/torrent/
   uploadZipDir: uploads/zip/
@@ -26,4 +26,28 @@ app:
   # 种子分类
   classifyFileDir: 种子分类/
 
-
+  # 文件分类规则配置
+  classification:
+    rules:
+      - name: fc2ppv
+        pattern: "fc2ppv|fc2-ppv"
+      - name: carib
+        pattern: "加勒比|carib"
+      - name: "10-mu"
+        pattern: "天然素人|10-mu|10musume"
+      - name: 1pondo
+        pattern: "一本道|1pon"
+      - name: heyzo
+        pattern: "heyzo"
+      - name: paco
+        pattern: "paco"
+      - name: kin8
+        pattern: "kin8"
+      - name: c0390
+        pattern: "c0930"
+      - name: h0930
+        pattern: "h0930"
+      - name: h4610
+        pattern: "h4610"
+      - name: AVF-PPV
+        pattern: "AVF-PPV-HEY"

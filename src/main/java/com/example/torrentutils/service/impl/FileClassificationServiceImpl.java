@@ -1,9 +1,11 @@
 package com.example.torrentutils.service.impl;
 
+import com.example.torrentutils.config.ClassificationRuleProperties;
 import com.example.torrentutils.model.FileClassificationRule;
 import com.example.torrentutils.service.FileClassificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -30,9 +32,29 @@ public class FileClassificationServiceImpl implements FileClassificationService 
      */
     private final List<FileClassificationRule> classificationRules = new CopyOnWriteArrayList<>();
 
-    public FileClassificationServiceImpl() {
-        // 初始化默认分类规则
-        initializeDefaultRules();
+    @Autowired
+    private ClassificationRuleProperties classificationRuleProperties;
+
+    /**
+     * 初始化分类规则（从配置文件读取）
+     */
+    @Autowired(required = false)
+    public void initClassificationRules() {
+        if (classificationRuleProperties != null && classificationRuleProperties.getRules() != null) {
+            for (ClassificationRuleProperties.Rule rule : classificationRuleProperties.getRules()) {
+                classificationRules.add(new FileClassificationRule(
+                        rule.getName(),
+                        rule.compilePattern()
+                ));
+                logger.info("加载分类规则: {} -> {}", rule.getName(), rule.getPattern());
+            }
+        }
+
+        // 如果配置为空，使用默认规则
+        if (classificationRules.isEmpty()) {
+            logger.warn("配置文件中未找到分类规则，使用默认规则");
+            initializeDefaultRules();
+        }
     }
 
     /**
